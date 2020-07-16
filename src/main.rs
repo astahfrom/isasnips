@@ -358,7 +358,11 @@ fn has_ext(p: &Path, ext: &str) -> bool {
     p.extension().map_or(false, |e| e == ext)
 }
 
-fn copy_isabelle(isa_path: &Path, temp_path: &Path, user_theories: &[OsString]) -> io::Result<()> {
+fn copy_isabelle(
+    isa_path: &Path,
+    temp_path: &Path,
+    user_theories: &[OsString],
+) -> io::Result<Vec<OsString>> {
     let mut processed = vec![];
 
     for entry in WalkDir::new(isa_path) {
@@ -380,7 +384,7 @@ fn copy_isabelle(isa_path: &Path, temp_path: &Path, user_theories: &[OsString]) 
                 .file_stem()
                 .expect("Could not extract file stem.");
 
-            if user_theories.contains(&theory.to_os_string()) {
+            if user_theories.is_empty() || user_theories.contains(&theory.to_os_string()) {
                 let new_theory = process_theory(entry.path())?;
                 fs::write(new_path, new_theory)?;
                 processed.push(theory.to_os_string());
@@ -398,7 +402,7 @@ fn copy_isabelle(isa_path: &Path, temp_path: &Path, user_theories: &[OsString]) 
         }
     }
 
-    Ok(())
+    Ok(processed)
 }
 
 fn begin_snippet(name: &str) -> String {
@@ -509,8 +513,11 @@ fn main() {
         let theory = mkroot(isa_path, temp_path).expect("Error making theory root directory.");
         user_theories.push(theory);
     } else {
-        copy_isabelle(&isa_path, &temp_path, &user_theories)
+        let processed = copy_isabelle(&isa_path, &temp_path, &user_theories)
             .expect("Could not copy Isabelle files.");
+        if user_theories.is_empty() {
+            user_theories.extend(processed);
+        }
     }
 
     call_isabelle(temp_path, &["build", "-c", "-D", "."]).expect("Error running Isabelle build.");
