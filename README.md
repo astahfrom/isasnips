@@ -154,3 +154,10 @@ And this one to include only a part, e.g. lines 3-5 (starting from 0):
     \SnippetPart{3}{5}{theorem:long-theorem}
 \end{isabelle}
 ```
+
+Limitations
+-----------
+
+- The parser is ad hoc and guaranteed to do something unexpected in some cases.
+- I do not know how to make Isabelle generate LaTeX without subsequently compiling it, so your theory/session must allow for this.
+
