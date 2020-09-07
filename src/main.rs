@@ -92,8 +92,16 @@ fn escape_underscores(s: &str) -> String {
     s.replace("_", "-")
 }
 
+fn strip_superscripts(s: &str) -> String {
+    s.replace("^", "")
+}
+
 fn snippet_name(key: &str, name: &str) -> String {
-    format!("{}:{}", escape_underscores(key), escape_underscores(name))
+    format!(
+        "{}:{}",
+        strip_superscripts(&escape_underscores(key)),
+        strip_superscripts(&escape_underscores(name))
+    )
 }
 
 fn text_raw(s: &str) -> String {
@@ -487,7 +495,7 @@ fn main() {
 
     if args.len() < 3 {
         println!(
-            "Usage: ./{} theory snippets-out.tex [optional list of theories to include]",
+            "Usage: ./{} theory/root snippets-out.tex [optional list of theories to include]",
             args[0]
         );
         exit(1);
