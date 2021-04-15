@@ -302,7 +302,15 @@ fn chunk_name(cmd: &str, words: &[String], last_fun: &Option<String>) -> Option<
     }
 
     if name.is_none() && !content.is_empty() && (cmd == "definition" || cmd == "abbreviation") {
-        name = Some(content[0].to_string());
+        // Make sure to include subscripts. A bit of a hack.
+        let mut parts = vec![];
+        parts.push(content[0].clone());
+        let mut i = 1;
+        while content[i].contains("^") {
+            parts.push(content[i].clone());
+            i += 1;
+        }
+        name = Some(parts.join(""));
     }
 
     if name.is_none() && last_fun.is_some() && (cmd == "termination") {
