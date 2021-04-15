@@ -71,7 +71,7 @@ pub const COMMANDS: &[(&str, CmdType)] = &[
   ("define", Inner),
   ("definition", OuterNamed),
   ("done", Inner),
-  ("end", Outer),
+  ("end", Inner),
   ("experiment", Outer),
   ("export_code", Outer),
   ("export_generated_files", Outer),
