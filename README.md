@@ -106,6 +106,17 @@ Something like the following macros is needed to turn snippets into LaTeX comman
 
 ```
 \usepackage{isabelle, isabellesym}
+
+% Isabelle currently generates some undefined macros, so we just define them to be empty:
+\def\isadelimtheory{}\def\endisadelimtheory{}
+\def\isatagtheory{}\def\endisatagtheory{}
+\def\isadelimML{}\def\endisadelimML{}
+\def\isatagML{}\def\endisatagML{}
+\def\isafoldML{}
+\def\isadelimproof{}\def\endisadelimproof{}
+\def\isatagproof{}\def\endisatagproof{}
+\def\isafoldproof{}
+
 \isabellestyle{it} % optional
 \newcommand{\DefineSnippet}[2]{\expandafter\newcommand\csname snippet--#1\endcsname{#2}}
 \input{snips}
@@ -136,6 +147,7 @@ Something like the following macros is needed to turn snippets into LaTeX comman
     \ifnum \i>#2 {}
     \else \repeat
 }}
+
 ```
 
 ### Examples
