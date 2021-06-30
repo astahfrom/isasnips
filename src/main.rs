@@ -499,7 +499,7 @@ fn extract_snippets(path: &Path, theories: &[OsString]) -> io::Result<String> {
 }
 
 fn main() {
-    let args: Vec<String> = env::args().collect();
+    let mut args: Vec<String> = env::args().collect();
 
     if args.len() < 3 {
         println!(
@@ -509,7 +509,15 @@ fn main() {
         exit(1);
     }
 
-    let mut user_theories = args.iter().skip(3).map(OsString::from).collect::<Vec<_>>();
+    let quick_and_dirty = args.contains(&String::from("-quick_and_dirty"));
+
+    let mut user_theories =
+	if quick_and_dirty {
+	    args.retain(|x| *x != "-quick_and_dirty");
+	    args.iter().skip(3).map(OsString::from).collect::<Vec<_>>()
+	} else {
+	    args.iter().skip(3).map(OsString::from).collect::<Vec<_>>()
+	};
 
     let isa_path = Path::new(&args[1]);
     if !isa_path.exists() {
@@ -536,7 +544,11 @@ fn main() {
         }
     }
 
-    call_isabelle(temp_path, &["build", "-c", "-D", "."]).expect("Error running Isabelle build.");
+    if quick_and_dirty {
+	call_isabelle(temp_path, &["build", "-c", "-o", "quick_and_dirty", "-D", "."]).expect("Error running Isabelle build.");
+    } else {
+	call_isabelle(temp_path, &["build", "-c", "-D", "."]).expect("Error running Isabelle build.");
+    }
 
     println!("Extracting snippets for theories: {:?}", user_theories);
 

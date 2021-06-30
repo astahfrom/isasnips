@@ -35,6 +35,12 @@ The (copy of the) session is cleaned before building.
 
 If snippets are generated for more than one theory then the snippets are prefixed by the name of the theory.
 
+
+### Unfinished theories
+
+If one of your Isabelle theories contains a `sorry`, you will need to pass the option `-o quick_and_dirty` to Isabelle before it will compile your session.
+To do this, you can pass the option `-quick_and_dirty` to isasnips.
+
 Output
 ------
 
