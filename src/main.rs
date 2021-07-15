@@ -509,11 +509,12 @@ fn main() {
         exit(1);
     }
 
-    let quick_and_dirty = args.contains(&String::from("-quick_and_dirty"));
+    let quick_and_dirty = args.contains(&String::from("-quick_and_dirty"))
+	               || args.contains(&String::from("-quick-and-dirty"));
 
     let mut user_theories =
 	if quick_and_dirty {
-	    args.retain(|x| *x != "-quick_and_dirty");
+	    args.retain(|x| *x != "-quick_and_dirty" && *x != "-quick-and-dirty");
 	    args.iter().skip(3).map(OsString::from).collect::<Vec<_>>()
 	} else {
 	    args.iter().skip(3).map(OsString::from).collect::<Vec<_>>()
