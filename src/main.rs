@@ -32,7 +32,6 @@ const ISA_NEWLINE: &str = "\\isanewline";
 fn make_root(theory: &str) -> String {
     format!(
         "session isasnips = HOL +
-  options [document = pdf, document_output = \"output\"]
   theories
     {}
   document_files
@@ -553,16 +552,21 @@ fn main() {
         }
     }
 
+    let mut isa_args = vec![
+        "build",
+        "-c",
+        "-D",
+        ".",
+        "-o",
+        "document=pdf",
+        "-o",
+        "document_output=output",
+    ];
+
     if quick_and_dirty {
-        call_isabelle(
-            temp_path,
-            &["build", "-c", "-o", "quick_and_dirty", "-D", "."],
-        )
-        .expect("Error running Isabelle build.");
-    } else {
-        call_isabelle(temp_path, &["build", "-c", "-D", "."])
-            .expect("Error running Isabelle build.");
+        isa_args.extend(&["-o", "quick_and_dirty"]);
     }
+    call_isabelle(temp_path, &isa_args).expect("Error running Isabelle build.");
 
     println!("Extracting snippets for theories: {:?}", user_theories);
 
