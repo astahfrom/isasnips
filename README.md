@@ -35,6 +35,12 @@ The (copy of the) session is cleaned before building.
 
 If snippets are generated for more than one theory then the snippets are prefixed by the name of the theory.
 
+
+### Unfinished theories
+
+If one of your Isabelle theories contains a `sorry`, you will need to pass the option `-o quick_and_dirty` to Isabelle before it will compile your session.
+To do this, you can pass the option `-quick_and_dirty` (or `-quick-and-dirty`) to isasnips.
+
 Output
 ------
 
@@ -106,6 +112,7 @@ Something like the following macros is needed to turn snippets into LaTeX comman
 
 ```
 \usepackage{isabelle, isabellesym}
+
 \isabellestyle{it} % optional
 \newcommand{\DefineSnippet}[2]{\expandafter\newcommand\csname snippet--#1\endcsname{#2}}
 \input{snips}
@@ -136,6 +143,20 @@ Something like the following macros is needed to turn snippets into LaTeX comman
     \ifnum \i>#2 {}
     \else \repeat
 }}
+
+```
+
+Depending on your LaTeX template, you may also need the following lines, since Isabelle will sometimes generate macros that are not defined in a template:
+```
+% Isabelle currently generates some undefined macros, so we just define them to be empty:
+\def\isadelimtheory{}\def\endisadelimtheory{}
+\def\isatagtheory{}\def\endisatagtheory{}
+\def\isadelimML{}\def\endisadelimML{}
+\def\isatagML{}\def\endisatagML{}
+\def\isafoldML{}
+\def\isadelimproof{}\def\endisadelimproof{}
+\def\isatagproof{}\def\endisatagproof{}
+\def\isafoldproof{}
 ```
 
 ### Examples
