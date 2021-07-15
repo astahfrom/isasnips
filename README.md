@@ -55,8 +55,10 @@ Each snippet is named by:
 3. A relative line number.
 
 ```
-[Theory:]command:name-lineno
+[Theory:]command:name-lineno[-serial]
 ```
+
+The serial number counts from 1 and is added when a hash value has already been used as a name.
 
 Underscores are converted to hyphens for the snippet names.
 Symbols are stripped to their ASCII name e.g. `pi`.

@@ -9,6 +9,7 @@ use std::path::Path;
 use std::process::{exit, Command, Stdio};
 
 use std::collections::hash_map::DefaultHasher;
+use std::collections::HashMap;
 use std::hash::{Hash, Hasher};
 
 use tempfile::tempdir;
@@ -327,6 +328,7 @@ fn process_theory(thy_path: &Path) -> io::Result<String> {
 
     let mut annotated: Vec<String> = vec![];
     let mut last_fun = None;
+    let mut hashes = HashMap::new();
 
     for chunk in &chunks {
         let (cmd, cmd_type, cont_lines) = chunk;
@@ -348,7 +350,14 @@ fn process_theory(thy_path: &Path) -> io::Result<String> {
                 let mut hasher = DefaultHasher::new();
                 words.hash(&mut hasher);
                 let hash = hasher.finish();
-                snippet_name(cmd, &format!("{:x}", hash))
+                let suffix = hashes.entry(hash).or_insert(0);
+                let name = if *suffix > 0 {
+                    snippet_name(cmd, &format!("{:x}-{}", hash, suffix))
+                } else {
+                    snippet_name(cmd, &format!("{:x}", hash))
+                };
+                *suffix += 1;
+                name
             }
         };
 
@@ -510,15 +519,14 @@ fn main() {
     }
 
     let quick_and_dirty = args.contains(&String::from("-quick_and_dirty"))
-	               || args.contains(&String::from("-quick-and-dirty"));
+        || args.contains(&String::from("-quick-and-dirty"));
 
-    let mut user_theories =
-	if quick_and_dirty {
-	    args.retain(|x| *x != "-quick_and_dirty" && *x != "-quick-and-dirty");
-	    args.iter().skip(3).map(OsString::from).collect::<Vec<_>>()
-	} else {
-	    args.iter().skip(3).map(OsString::from).collect::<Vec<_>>()
-	};
+    let mut user_theories = if quick_and_dirty {
+        args.retain(|x| *x != "-quick_and_dirty" && *x != "-quick-and-dirty");
+        args.iter().skip(3).map(OsString::from).collect::<Vec<_>>()
+    } else {
+        args.iter().skip(3).map(OsString::from).collect::<Vec<_>>()
+    };
 
     let isa_path = Path::new(&args[1]);
     if !isa_path.exists() {
@@ -546,9 +554,14 @@ fn main() {
     }
 
     if quick_and_dirty {
-	call_isabelle(temp_path, &["build", "-c", "-o", "quick_and_dirty", "-D", "."]).expect("Error running Isabelle build.");
+        call_isabelle(
+            temp_path,
+            &["build", "-c", "-o", "quick_and_dirty", "-D", "."],
+        )
+        .expect("Error running Isabelle build.");
     } else {
-	call_isabelle(temp_path, &["build", "-c", "-D", "."]).expect("Error running Isabelle build.");
+        call_isabelle(temp_path, &["build", "-c", "-D", "."])
+            .expect("Error running Isabelle build.");
     }
 
     println!("Extracting snippets for theories: {:?}", user_theories);
