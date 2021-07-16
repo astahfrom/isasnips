@@ -248,7 +248,12 @@ fn chunk_theory(thy: String) -> Vec<Chunk> {
     chunks
 }
 
-fn chunk_name(cmd: &str, words: &[String], last_fun: &Option<String>) -> Option<String> {
+fn chunk_name(
+    cmd: &str,
+    words: &[String],
+    last_fun: &Option<String>,
+    last_instantiation: &Option<String>,
+) -> Option<String> {
     let mut inside_parens = 0;
     let mut inside_open = 0;
 
@@ -322,6 +327,10 @@ fn chunk_name(cmd: &str, words: &[String], last_fun: &Option<String>) -> Option<
         name = last_fun.clone();
     }
 
+    if name.is_none() && last_instantiation.is_some() && (cmd == "instance") {
+        name = last_instantiation.clone();
+    }
+
     name.map(|n| snippet_name(cmd, &n))
 }
 
@@ -332,6 +341,7 @@ fn process_theory(thy_path: &Path) -> io::Result<String> {
 
     let mut annotated: Vec<String> = vec![];
     let mut last_fun = None;
+    let mut last_instantiation = None;
     let mut hashes = HashMap::new();
 
     for chunk in &chunks {
@@ -345,7 +355,7 @@ fn process_theory(thy_path: &Path) -> io::Result<String> {
 
         let mut outer_name = None;
         if *cmd_type == CmdType::OuterNamed {
-            outer_name = chunk_name(cmd, &words, &last_fun);
+            outer_name = chunk_name(cmd, &words, &last_fun, &last_instantiation);
         }
 
         let name = match outer_name {
@@ -365,10 +375,16 @@ fn process_theory(thy_path: &Path) -> io::Result<String> {
             }
         };
 
-        if cmd.starts_with("fun") {
+        if cmd == "function" {
             let colon = name.find(':').unwrap_or(0);
             let last_name = name[colon + 1..].to_string();
             last_fun = Some(last_name);
+        }
+
+        if cmd == "instantiation" {
+            let colon = name.find(':').unwrap_or(0);
+            let last_name = name[colon + 1..].to_string();
+            last_instantiation = Some(last_name);
         }
 
         annotated.push(begin_marker(&name));
