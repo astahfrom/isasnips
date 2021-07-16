@@ -313,6 +313,10 @@ fn chunk_name(cmd: &str, words: &[String], last_fun: &Option<String>) -> Option<
         name = Some(parts.join(""));
     }
 
+    if cmd == "termination" && name_parts.len() > 1 && name_parts[1] == "proof" {
+        name = None;
+    }
+
     if name.is_none() && last_fun.is_some() && (cmd == "termination") {
         name = last_fun.clone();
     }
