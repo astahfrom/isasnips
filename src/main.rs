@@ -29,13 +29,14 @@ const ISA_NEWLINE: &str = "\\isanewline";
  * Isabelle
  */
 
-fn make_root(theory: &str) -> String {
+fn make_root(theory: &str, library: bool) -> String {
     format!(
-        "session isasnips = HOL +
+        "session isasnips = {} +
   theories
     {}
   document_files
     \"root.tex\"",
+        if library { "\"HOL-Library\"" } else { "HOL" },
         theory
     )
 }
@@ -64,7 +65,7 @@ fn call_isabelle(path: &Path, cmds: &[&str]) -> io::Result<()> {
     Ok(())
 }
 
-fn mkroot(isa_path: &Path, temp_dir: &Path) -> io::Result<OsString> {
+fn mkroot(isa_path: &Path, temp_dir: &Path, library: bool) -> io::Result<OsString> {
     let theory_stem = isa_path.file_stem().expect("No theory file.");
 
     let theory = theory_stem
@@ -78,7 +79,7 @@ fn mkroot(isa_path: &Path, temp_dir: &Path) -> io::Result<OsString> {
     call_isabelle(temp_dir, &["mkroot", "-n", "isasnips"])?;
 
     let root_path = temp_dir.join(Path::new("ROOT"));
-    let root = make_root(theory);
+    let root = make_root(theory, library);
     fs::write(root_path, root)?;
 
     Ok(theory_stem.to_os_string())
@@ -510,6 +511,8 @@ fn extract_snippets(path: &Path, theories: &[OsString]) -> io::Result<String> {
     Ok(snippets.join("\n"))
 }
 
+const OPTIONS: [&str; 3] = ["-quick_and_dirty", "-quick-and-dirty", "-library"];
+
 fn main() {
     let mut args: Vec<String> = env::args().collect();
 
@@ -524,12 +527,11 @@ fn main() {
     let quick_and_dirty = args.contains(&String::from("-quick_and_dirty"))
         || args.contains(&String::from("-quick-and-dirty"));
 
-    let mut user_theories = if quick_and_dirty {
-        args.retain(|x| *x != "-quick_and_dirty" && *x != "-quick-and-dirty");
-        args.iter().skip(3).map(OsString::from).collect::<Vec<_>>()
-    } else {
-        args.iter().skip(3).map(OsString::from).collect::<Vec<_>>()
-    };
+    let library = args.contains(&String::from("-library"));
+
+    args.retain(|x| !OPTIONS.contains(&x.as_str()));
+
+    let mut user_theories = args.iter().skip(3).map(OsString::from).collect::<Vec<_>>();
 
     let isa_path = Path::new(&args[1]);
     if !isa_path.exists() {
@@ -546,7 +548,8 @@ fn main() {
     println!("Working directory: {}", temp_path.display());
 
     if isa_path.is_file() {
-        let theory = mkroot(isa_path, temp_path).expect("Error making theory root directory.");
+        let theory =
+            mkroot(isa_path, temp_path, library).expect("Error making theory root directory.");
         user_theories.push(theory);
     } else {
         let processed = copy_isabelle(&isa_path, &temp_path, &user_theories)
