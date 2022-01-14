@@ -65,14 +65,19 @@ fn call_isabelle(path: &Path, cmds: &[&str]) -> io::Result<()> {
     Ok(())
 }
 
-fn mkroot(isa_path: &Path, temp_dir: &Path, library: bool) -> io::Result<OsString> {
+fn mkroot(
+    isa_path: &Path,
+    temp_dir: &Path,
+    library: bool,
+    skip_text: bool,
+) -> io::Result<OsString> {
     let theory_stem = isa_path.file_stem().expect("No theory file.");
 
     let theory = theory_stem
         .to_str()
         .expect("Could not convert theory name to str");
 
-    let new_theory = process_theory(isa_path)?;
+    let new_theory = process_theory(isa_path, skip_text)?;
     let new_path = temp_dir.join(Path::new(theory).with_extension("thy"));
     fs::write(new_path, new_theory)?;
 
@@ -334,7 +339,7 @@ fn chunk_name(
     name.map(|n| snippet_name(cmd, &n))
 }
 
-fn process_theory(thy_path: &Path) -> io::Result<String> {
+fn process_theory(thy_path: &Path, skip_text: bool) -> io::Result<String> {
     let thy = fs::read_to_string(thy_path)?;
 
     let chunks = chunk_theory(thy);
@@ -346,6 +351,11 @@ fn process_theory(thy_path: &Path) -> io::Result<String> {
 
     for chunk in &chunks {
         let (cmd, cmd_type, cont_lines) = chunk;
+
+        if skip_text && cmd == "text" {
+            continue;
+        }
+
         let cont = cont_lines.join("\n");
         let words = make_words(&cont);
 
@@ -407,6 +417,7 @@ fn copy_isabelle(
     isa_path: &Path,
     temp_path: &Path,
     user_theories: &[OsString],
+    skip_text: bool,
 ) -> io::Result<Vec<OsString>> {
     let mut processed = vec![];
 
@@ -430,7 +441,7 @@ fn copy_isabelle(
                 .expect("Could not extract file stem.");
 
             if user_theories.is_empty() || user_theories.contains(&theory.to_os_string()) {
-                let new_theory = process_theory(entry.path())?;
+                let new_theory = process_theory(entry.path(), skip_text)?;
                 fs::write(new_path, new_theory)?;
                 processed.push(theory.to_os_string());
             } else {
@@ -527,7 +538,13 @@ fn extract_snippets(path: &Path, theories: &[OsString]) -> io::Result<String> {
     Ok(snippets.join("\n"))
 }
 
-const OPTIONS: [&str; 3] = ["-quick_and_dirty", "-quick-and-dirty", "-library"];
+const OPTIONS: [&str; 5] = [
+    "-quick_and_dirty",
+    "-quick-and-dirty",
+    "-library",
+    "-skip-text",
+    "-skip_text",
+];
 
 fn main() {
     let mut args: Vec<String> = env::args().collect();
@@ -544,6 +561,8 @@ fn main() {
         || args.contains(&String::from("-quick-and-dirty"));
 
     let library = args.contains(&String::from("-library"));
+    let skip_text =
+        args.contains(&String::from("-skip-text")) || args.contains(&String::from("-skip_text"));
 
     args.retain(|x| !OPTIONS.contains(&x.as_str()));
 
@@ -564,11 +583,11 @@ fn main() {
     println!("Working directory: {}", temp_path.display());
 
     if isa_path.is_file() {
-        let theory =
-            mkroot(isa_path, temp_path, library).expect("Error making theory root directory.");
+        let theory = mkroot(isa_path, temp_path, library, skip_text)
+            .expect("Error making theory root directory.");
         user_theories.push(theory);
     } else {
-        let processed = copy_isabelle(&isa_path, &temp_path, &user_theories)
+        let processed = copy_isabelle(&isa_path, &temp_path, &user_theories, skip_text)
             .expect("Could not copy Isabelle files.");
         if user_theories.is_empty() {
             user_theories.extend(processed);
