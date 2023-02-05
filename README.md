@@ -1,3 +1,8 @@
+DEPRECATED
+==========
+
+This tool has been superseded by [astahfrom/cartouches](https://github.com/astahfrom/cartouches) which is simpler, has more functionality and runs in the browser at [astahfrom.github.io/cartouches](https://astahfrom.github.io/cartouches/).
+
 isasnips
 ========
 
